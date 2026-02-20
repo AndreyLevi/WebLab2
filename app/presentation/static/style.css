@@ -51,10 +51,21 @@ button {
     border-radius: 5px;
     cursor: pointer;
     font-size: 16px;
+    margin-right: 5px;
 }
 
 button:hover {
     background-color: #2980b9;
+}
+
+/* Кнопка удаления */
+.delete-btn {
+    background-color: #e74c3c;
+    margin-top: 10px;
+}
+
+.delete-btn:hover {
+    background-color: #c0392b;
 }
 
 /* Карточка ссылки */
@@ -83,12 +94,34 @@ button:hover {
     font-weight: bold;
 }
 
+.success {
+    color: #155724;
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+}
+
+.error {
+    color: #721c24;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+}
+
 /* Карточка контактов */
 .contact-card {
     background: white;
     padding: 20px;
     border-radius: 5px;
     border: 1px solid #ddd;
+}
+
+/* Контейнер авторизации */
+.auth-container {
+    background: white;
+    padding: 30px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    max-width: 500px;
+    margin: 0 auto;
 }
 
 hr {

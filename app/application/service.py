@@ -1,52 +1,112 @@
-# Бизнес-логика - правила работы с ссылками
-from app.infrastructure.storage import storage
-from app.domain.models import Link, LinkCreate, LinkUpdate
-from fastapi import HTTPException
+# Бизнес-логика приложения
+from sqlalchemy.orm import Session
+from typing import List, Optional
+from fastapi import HTTPException, status
+from app.infrastructure.models import LinkDB
+from app.infrastructure.repositories import LinkRepository, UserRepository
+from app.domain.models import LinkCreate, LinkUpdate, UserCreate
+from app.application.auth import get_password_hash, create_access_token, timedelta
+from datetime import datetime
 
 class LinkService:
+    """Сервис для работы со ссылками"""
     
-    # Получить все ссылки
-    def get_all(self):
-        return storage.get_all()
+    def __init__(self, db: Session):
+        self.db = db
+        self.repository = LinkRepository(db)
     
-    # Получить одну ссылку по ID
-    def get_one(self, link_id: str):
-        link = storage.get_by_id(link_id)
+    def get_all(self, user_id: int = None) -> List[LinkDB]:
+        """Получить все ссылки"""
+        return self.repository.get_all(user_id)
+    
+    def get_by_id(self, link_id: int, user_id: int = None) -> LinkDB:
+        """Получить ссылку по ID"""
+        link = self.repository.get_by_id(link_id, user_id)
         if not link:
-            # Если не нашли - возвращаем ошибку 404
             raise HTTPException(status_code=404, detail="Ссылка не найдена")
         return link
     
-    # Создать новую ссылку
-    def create(self, data: LinkCreate):
-        link = Link.create(data)  # Создаём объект ссылки
-        success = storage.add(link)  # Сохраняем в хранилище
-        
-        if not success:
-            # Если хранилище переполнено
+    def create(self,  LinkCreate, user_id: int) -> LinkDB:
+        """Создать новую ссылку"""
+        # Проверяем лимит (50 ссылок на пользователя)
+        count = self.repository.count(user_id)
+        if count >= 50:
             raise HTTPException(
                 status_code=400, 
                 detail="Достигнут лимит хранилища (50 записей)"
             )
-        return {"message": "Ссылка успешно создана"}
+        
+        link = LinkDB(
+            url=data.url,
+            title=data.title,
+            description=data.description
+        )
+        return self.repository.create(link, user_id)
     
-    # Обновить ссылку
-    def update(self, link_id: str, data: LinkUpdate):
-        # Преобразуем данные в словарь, убираем пустые значения
+    def update(self, link_id: int,  LinkUpdate, user_id: int) -> LinkDB:
+        """Обновить ссылку"""
         update_data = data.dict(exclude_unset=True)
-        link = storage.update(link_id, update_data)
+        link = self.repository.update(link_id, update_data, user_id)
         
         if not link:
             raise HTTPException(status_code=404, detail="Ссылка не найдена")
-        return {"message": "Ссылка успешно обновлена"}
+        return link
     
-    # Удалить ссылку
-    def delete(self, link_id: str):
-        success = storage.delete(link_id)
+    def delete(self, link_id: int, user_id: int) -> dict:
+        """Удалить ссылку"""
+        success = self.repository.delete(link_id, user_id)
         
         if not success:
             raise HTTPException(status_code=404, detail="Ссылка не найдена")
         return {"message": "Ссылка успешно удалена"}
 
-# Создаём сервис для использования
-link_service = LinkService()
+
+class AuthService:
+    """Сервис для аутентификации"""
+    
+    def __init__(self, db: Session):
+        self.db = db
+        self.user_repository = UserRepository(db)
+    
+    def register(self,  UserCreate) -> dict:
+        """Зарегистрировать нового пользователя"""
+        # Проверяем, существует ли пользователь
+        if self.user_repository.get_by_username(data.username):
+            raise HTTPException(
+                status_code=400, 
+                detail="Пользователь с таким именем уже существует"
+            )
+        
+        if self.user_repository.get_by_email(data.email):
+            raise HTTPException(
+                status_code=400, 
+                detail="Email уже зарегистрирован"
+            )
+        
+        # Создаём пользователя
+        user = UserDB(
+            username=data.username,
+            email=data.email,
+            hashed_password=get_password_hash(data.password)
+        )
+        self.user_repository.create(user)
+        
+        return {"message": "Пользователь успешно зарегистрирован"}
+    
+    def login(self, username: str, password: str) -> dict:
+        """Войти в систему и получить токен"""
+        user = self.user_repository.get_by_username(username)
+        
+        if not user or not verify_password(password, user.hashed_password):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Неверное имя пользователя или пароль",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        # Создаём токен
+        access_token = create_access_token(
+            data={"sub": user.username, "user_id": user.id}
+        )
+        
+        return {"access_token": access_token, "token_type": "bearer"}

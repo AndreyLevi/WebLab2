@@ -1,38 +1,81 @@
-# API эндпоинты - точки входа для запросов
-from fastapi import APIRouter
-from app.domain.models import LinkCreate, LinkUpdate
-from app.application.service import link_service
+# API эндпоинты с аутентификацией
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 from typing import List
+from app.infrastructure.database import get_db
+from app.application.service import LinkService, AuthService
+from app.domain.models import LinkCreate, LinkUpdate, UserCreate, UserLogin, Token, Link
+from app.application.auth import get_current_user
 
-# Создаём роутер для группы ссылок
-router = APIRouter(prefix="/api/links", tags=["Ссылки"])
+# ===== Роутер для ссылок =====
+links_router = APIRouter(prefix="/api/links", tags=["Ссылки"])
 
-# GET - получить все ссылки
-@router.get("/")
-async def get_all_links() -> List:
-    """Вернуть список всех ссылок"""
-    return link_service.get_all()
+@links_router.get("/", response_model=List[Link])
+async def get_all_links(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Получить все ссылки текущего пользователя"""
+    service = LinkService(db)
+    return service.get_all(user_id=current_user["user_id"])
 
-# GET - получить одну ссылку
-@router.get("/{link_id}")
-async def get_link(link_id: str):
-    """Вернуть ссылку по ID"""
-    return link_service.get_one(link_id)
+@links_router.get("/{link_id}", response_model=Link)
+async def get_link(
+    link_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Получить ссылку по ID"""
+    service = LinkService(db)
+    return service.get_by_id(link_id, user_id=current_user["user_id"])
 
-# POST - создать новую ссылку
-@router.post("/")
-async def create_link(link: LinkCreate):
+@links_router.post("/", status_code=201, response_model=Link)
+async def create_link(
+    link: LinkCreate,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Создать новую ссылку"""
-    return link_service.create(link)
+    service = LinkService(db)
+    return service.create(link, user_id=current_user["user_id"])
 
-# PUT - обновить ссылку
-@router.put("/{link_id}")
-async def update_link(link_id: str, link: LinkUpdate):
-    """Обновить существующую ссылку"""
-    return link_service.update(link_id, link)
+@links_router.put("/{link_id}", response_model=Link)
+async def update_link(
+    link_id: int,
+    link: LinkUpdate,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Обновить ссылку"""
+    service = LinkService(db)
+    return service.update(link_id, link, user_id=current_user["user_id"])
 
-# DELETE - удалить ссылку
-@router.delete("/{link_id}")
-async def delete_link(link_id: str):
-    """Удалить ссылку по ID"""
-    return link_service.delete(link_id)
+@links_router.delete("/{link_id}", status_code=204)
+async def delete_link(
+    link_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Удалить ссылку"""
+    service = LinkService(db)
+    return service.delete(link_id, user_id=current_user["user_id"])
+
+# ===== Роутер для аутентификации =====
+auth_router = APIRouter(prefix="/api/auth", tags=["Аутентификация"])
+
+@auth_router.post("/register", response_model=dict)
+async def register(user: UserCreate, db: Session = Depends(get_db)):
+    """Зарегистрировать нового пользователя"""
+    service = AuthService(db)
+    return service.register(user)
+
+@auth_router.post("/login", response_model=Token)
+async def login(user: UserLogin, db: Session = Depends(get_db)):
+    """Войти в систему"""
+    service = AuthService(db)
+    return service.login(user.username, user.password)
+
+@auth_router.get("/me", response_model=dict)
+async def get_me(current_user: dict = Depends(get_current_user)):
+    """Получить информацию о текущем пользователе"""
+    return current_user

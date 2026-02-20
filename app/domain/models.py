@@ -1,33 +1,49 @@
-# Модели данных - описываем, как выглядит наша ссылка
-from pydantic import BaseModel
+# Pydantic модели для валидации данных
+from pydantic import BaseModel, EmailStr
 from typing import Optional
-from uuid import uuid4
+from datetime import datetime
 
-# Модель для создания новой ссылки
+# ===== Модели для ссылок =====
 class LinkCreate(BaseModel):
-    url: str           # URL адрес
-    title: str         # Заголовок
-    description: Optional[str] = None  # Описание (не обязательно)
+    url: str
+    title: str
+    description: Optional[str] = None
 
-# Модель для обновления ссылки
 class LinkUpdate(BaseModel):
     url: Optional[str] = None
     title: Optional[str] = None
     description: Optional[str] = None
 
-# Модель полной ссылки (с ID)
 class Link(BaseModel):
-    id: str
+    id: int
     url: str
     title: str
     description: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
     
-    # Создаём новую ссылку с автоматическим ID
-    @staticmethod
-    def create(data: LinkCreate):
-        return Link(
-            id=str(uuid4()),  # Генерируем уникальный ID
-            url=data.url,
-            title=data.title,
-            description=data.description
-        )
+    class Config:
+        from_attributes = True  # Для работы с ORM
+
+# ===== Модели для пользователей =====
+class UserCreate(BaseModel):
+    username: str
+    email: EmailStr
+    password: str
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+class User(BaseModel):
+    id: int
+    username: str
+    email: str
+    is_active: bool = True
+    
+    class Config:
+        from_attributes = True
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"

@@ -7,14 +7,14 @@
 </head>
 <body>
     <nav>
-        <a href="index.html"> Список ссылок</a>
-        <a href="manage.html"> Управление</a>
-        <a href="contacts.html"> Контакты</a>
+        <a href="index.html">Список ссылок</a>
+        <a href="manage.html">Управление</a>
+        <a href="contacts.html">Контакты</a>
+        <a href="#" onclick="logout()">Выход</a>
     </nav>
     
     <h1>Добавить новую ссылку</h1>
     
-    <!-- Форма добавления -->
     <form id="add-form">
         <label>URL адрес:</label>
         <input type="url" id="url" placeholder="https://example.com" required>
@@ -25,7 +25,7 @@
         <label>Описание:</label>
         <input type="text" id="desc" placeholder="Краткое описание">
         
-        <button type="submit"> Добавить ссылку</button>
+        <button type="submit">Добавить ссылку</button>
     </form>
     
     <div id="message"></div>
@@ -34,7 +34,7 @@
     
     <h1>Удалить ссылку</h1>
     <input type="text" id="delete-id" placeholder="Введите ID ссылки">
-    <button onclick="deleteLink()"> Удалить</button>
+    <button onclick="deleteLink()">Удалить</button>
     
     <script src="script.js"></script>
 </body>

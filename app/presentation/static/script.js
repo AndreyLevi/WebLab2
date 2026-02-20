@@ -1,108 +1,148 @@
-// Адрес нашего API
-const API_URL = "/api/links";
+const API_URL = "/api";
+let authToken = localStorage.getItem('token');
 
-// Функция загрузки всех ссылок
-async function loadLinks() {
-    const container = document.getElementById('links-container');
+// ===== Аутентификация =====
+
+// Вход
+document.getElementById('login-form')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
     
-    // Если элемента нет на странице - выходим
-    if (!container) return;
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
     
     try {
-        // Делаем запрос к API
-        const response = await fetch(API_URL + "/");
-        const links = await response.json();
+        const response = await fetch(API_URL + "/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password })
+        });
         
-        // Если ссылок нет
-        if (links.length === 0) {
-            container.innerHTML = "<p>Ссылок пока нет. Добавьте первую!</p>";
+        if (response.ok) {
+            const data = await response.json();
+            localStorage.setItem('token', data.access_token);
+            authToken = data.access_token;
+            window.location.href = 'index.html';
+        } else {
+            const error = await response.json();
+            showMessage(error.detail, 'error');
+        }
+    } catch (error) {
+        showMessage('Ошибка соединения', 'error');
+    }
+});
+
+// Регистрация
+document.getElementById('register-form')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const username = document.getElementById('reg-username').value;
+    const email = document.getElementById('reg-email').value;
+    const password = document.getElementById('reg-password').value;
+    
+    try {
+        const response = await fetch(API_URL + "/auth/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, email, password })
+        });
+        
+        if (response.ok) {
+            showMessage('Регистрация успешна! Теперь войдите.', 'success');
+            document.getElementById('register-form').reset();
+        } else {
+            const error = await response.json();
+            showMessage('Ошибка: ' + error.detail, 'error');
+        }
+    } catch (error) {
+        showMessage('Ошибка соединения', 'error');
+    }
+});
+
+// ===== Работа со ссылками =====
+
+async function loadLinks() {
+    const container = document.getElementById('links-container');
+    if (!container) return;
+    
+    checkAuth();
+    
+    try {
+        const response = await fetch(API_URL + "/links/", {
+            headers: { "Authorization": `Bearer ${authToken}` }
+        });
+        
+        if (response.status === 401) {
+            window.location.href = 'login.html';
             return;
         }
         
-        // Создаём HTML для каждой ссылки
+        const links = await response.json();
+        
+        if (links.length === 0) {
+            container.innerHTML = "<p>Ссылок пока нет.</p>";
+            return;
+        }
+        
         container.innerHTML = links.map(link => `
             <div class="link-card">
                 <h3><a href="${link.url}" target="_blank">${link.title}</a></h3>
                 <p>${link.description || 'Без описания'}</p>
-                <small style="color: #888;">ID: ${link.id}</small>
+                <small>ID: ${link.id} | Дата: ${new Date(link.created_at).toLocaleDateString()}</small>
+                <button onclick="deleteLink(${link.id})" class="delete-btn">Удалить</button>
             </div>
         `).join('');
         
     } catch (error) {
-        container.innerHTML = "<p style='color: red;'>Ошибка загрузки ссылок</p>";
-        console.error(error);
+        container.innerHTML = "<p style='color: red;'>Ошибка загрузки</p>";
     }
 }
 
-// Обработка формы добавления ссылки
-document.getElementById('add-form')?.addEventListener('submit', async function(e) {
-    e.preventDefault();  // Отменяем стандартную отправку формы
+async function deleteLink(id) {
+    if (!confirm('Удалить эту ссылку?')) return;
     
-    // Получаем данные из полей
-    const url = document.getElementById('url').value;
-    const title = document.getElementById('title').value;
-    const description = document.getElementById('desc').value;
-    const messageDiv = document.getElementById('message');
+    checkAuth();
     
     try {
-        // Отправляем POST запрос
-        const response = await fetch(API_URL + "/", {
-            method: "POST",
-            headers: { 
-                "Content-Type": "application/json" 
-            },
-            body: JSON.stringify({ 
-                url: url, 
-                title: title, 
-                description: description 
-            })
+        const response = await fetch(API_URL + "/links/" + id, {
+            method: "DELETE",
+            headers: { "Authorization": `Bearer ${authToken}` }
         });
         
-        // Проверяем ответ
         if (response.ok) {
-            messageDiv.style.color = "green";
-            messageDiv.style.background = "#d4edda";
-            messageDiv.innerText = "Ссылка успешно добавлена!";
-            
-            // Очищаем форму
-            document.getElementById('add-form').reset();
+            showMessage('Ссылка удалена', 'success');
+            loadLinks();
         } else {
-            const error = await response.json();
-            messageDiv.style.color = "red";
-            messageDiv.style.background = "#f8d7da";
-            messageDiv.innerText = "Ошибка: " + error.detail;
+            showMessage('Ошибка удаления', 'error');
         }
     } catch (error) {
-        messageDiv.innerText = "Ошибка соединения с сервером";
+        showMessage('Ошибка соединения', 'error');
     }
-});
+}
 
-// Функция удаления ссылки
-async function deleteLink() {
-    const id = document.getElementById('delete-id').value;
-    const messageDiv = document.getElementById('message');
-    
-    if (!id) {
-        messageDiv.innerText = "Введите ID ссылки";
-        return;
+// ===== Утилиты =====
+
+function checkAuth() {
+    if (!authToken) {
+        window.location.href = 'login.html';
     }
-    
-    try {
-        const response = await fetch(API_URL + "/" + id, { 
-            method: "DELETE" 
-        });
-        
-        if (response.ok) {
-            messageDiv.style.color = "green";
-            messageDiv.style.background = "#d4edda";
-            messageDiv.innerText = " Ссылка удалена!";
-            document.getElementById('delete-id').value = "";
-        } else {
-            messageDiv.style.color = "red";
-            messageDiv.style.background = "#f8d7da";
-            messageDiv.innerText = "Ссылка с таким ID не найдена";
-        }
-    } catch (error) {
-        messageDiv.innerText = "Ошибка соединения";
+}
+
+function showMessage(text, type) {
+    const msgDiv = document.getElementById('message');
+    if (msgDiv) {
+        msgDiv.className = type;
+        msgDiv.innerText = text;
     }
+}
+
+function logout() {
+    localStorage.removeItem('token');
+    authToken = null;
+    window.location.href = 'login.html';
+}
+
+// Проверка авторизации при загрузке
+if (window.location.pathname.includes('index.html') || 
+    window.location.pathname.includes('manage.html')) {
+    checkAuth();
 }
