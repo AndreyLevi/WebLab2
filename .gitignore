@@ -1,0 +1,16 @@
+venv/
+env/
+.venv/
+
+# Python кэш
+__pycache__/
+*.pyc
+*.pyo
+
+# Настройки IDE
+.vscode/
+.idea/
+
+# OS файлы
+.DS_Store
+Thumbs.db

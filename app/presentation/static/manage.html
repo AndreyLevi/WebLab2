@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Управление ссылками</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <a href="index.html"> Список ссылок</a>
+        <a href="manage.html"> Управление</a>
+        <a href="contacts.html"> Контакты</a>
+    </nav>
+    
+    <h1>Добавить новую ссылку</h1>
+    
+    <!-- Форма добавления -->
+    <form id="add-form">
+        <label>URL адрес:</label>
+        <input type="url" id="url" placeholder="https://example.com" required>
+        
+        <label>Заголовок:</label>
+        <input type="text" id="title" placeholder="Например: Google" required>
+        
+        <label>Описание:</label>
+        <input type="text" id="desc" placeholder="Краткое описание">
+        
+        <button type="submit"> Добавить ссылку</button>
+    </form>
+    
+    <div id="message"></div>
+    
+    <hr>
+    
+    <h1>Удалить ссылку</h1>
+    <input type="text" id="delete-id" placeholder="Введите ID ссылки">
+    <button onclick="deleteLink()"> Удалить</button>
+    
+    <script src="script.js"></script>
+</body>
+</html>
