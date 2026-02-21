@@ -1,22 +1,16 @@
 const API_URL = "/api";
 let authToken = localStorage.getItem('token');
 
-// ===== Аутентификация =====
-
-// Вход
 document.getElementById('login-form')?.addEventListener('submit', async function(e) {
     e.preventDefault();
-    
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
-    
     try {
         const response = await fetch(API_URL + "/auth/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username, password })
         });
-        
         if (response.ok) {
             const data = await response.json();
             localStorage.setItem('token', data.access_token);
@@ -31,21 +25,17 @@ document.getElementById('login-form')?.addEventListener('submit', async function
     }
 });
 
-// Регистрация
 document.getElementById('register-form')?.addEventListener('submit', async function(e) {
     e.preventDefault();
-    
     const username = document.getElementById('reg-username').value;
     const email = document.getElementById('reg-email').value;
     const password = document.getElementById('reg-password').value;
-    
     try {
         const response = await fetch(API_URL + "/auth/register", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username, email, password })
         });
-        
         if (response.ok) {
             showMessage('Регистрация успешна! Теперь войдите.', 'success');
             document.getElementById('register-form').reset();
@@ -58,31 +48,23 @@ document.getElementById('register-form')?.addEventListener('submit', async funct
     }
 });
 
-// ===== Работа со ссылками =====
-
 async function loadLinks() {
     const container = document.getElementById('links-container');
     if (!container) return;
-    
     checkAuth();
-    
     try {
         const response = await fetch(API_URL + "/links/", {
             headers: { "Authorization": `Bearer ${authToken}` }
         });
-        
         if (response.status === 401) {
             window.location.href = 'login.html';
             return;
         }
-        
         const links = await response.json();
-        
         if (links.length === 0) {
             container.innerHTML = "<p>Ссылок пока нет.</p>";
             return;
         }
-        
         container.innerHTML = links.map(link => `
             <div class="link-card">
                 <h3><a href="${link.url}" target="_blank">${link.title}</a></h3>
@@ -91,7 +73,6 @@ async function loadLinks() {
                 <button onclick="deleteLink(${link.id})" class="delete-btn">Удалить</button>
             </div>
         `).join('');
-        
     } catch (error) {
         container.innerHTML = "<p style='color: red;'>Ошибка загрузки</p>";
     }
@@ -99,15 +80,12 @@ async function loadLinks() {
 
 async function deleteLink(id) {
     if (!confirm('Удалить эту ссылку?')) return;
-    
     checkAuth();
-    
     try {
         const response = await fetch(API_URL + "/links/" + id, {
             method: "DELETE",
             headers: { "Authorization": `Bearer ${authToken}` }
         });
-        
         if (response.ok) {
             showMessage('Ссылка удалена', 'success');
             loadLinks();
@@ -118,8 +96,6 @@ async function deleteLink(id) {
         showMessage('Ошибка соединения', 'error');
     }
 }
-
-// ===== Утилиты =====
 
 function checkAuth() {
     if (!authToken) {
@@ -141,8 +117,6 @@ function logout() {
     window.location.href = 'login.html';
 }
 
-// Проверка авторизации при загрузке
-if (window.location.pathname.includes('index.html') || 
-    window.location.pathname.includes('manage.html')) {
+if (window.location.pathname.includes('index.html') || window.location.pathname.includes('manage.html')) {
     checkAuth();
 }

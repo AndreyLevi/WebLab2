@@ -1,9 +1,7 @@
-# Pydantic модели для валидации данных
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime
 
-# ===== Модели для ссылок =====
 class LinkCreate(BaseModel):
     url: str
     title: str
@@ -23,9 +21,8 @@ class Link(BaseModel):
     updated_at: datetime
     
     class Config:
-        from_attributes = True  # Для работы с ORM
+        from_attributes = True
 
-# ===== Модели для пользователей =====
 class UserCreate(BaseModel):
     username: str
     email: EmailStr

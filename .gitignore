@@ -1,16 +1,9 @@
-venv/
-env/
-.venv/
-
-# Python кэш
 __pycache__/
 *.pyc
-*.pyo
-
-# Настройки IDE
+.env
+venv/
+.venv/
 .vscode/
 .idea/
-
-# OS файлы
+*.db
 .DS_Store
-Thumbs.db

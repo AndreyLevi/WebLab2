@@ -1,12 +1,8 @@
-# Точка входа в приложение
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from app.presentation.api import links_router, auth_router
 from app.infrastructure.database import engine, Base
-
-# Создаём таблицы в БД (если не существуют)
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Лабораторная работа №2",
@@ -14,7 +10,10 @@ app = FastAPI(
     version="2.0"
 )
 
-# CORS middleware
+@app.on_event("startup")
+async def startup_event():
+    Base.metadata.create_all(bind=engine)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -23,11 +22,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Подключаем роутеры
 app.include_router(links_router)
 app.include_router(auth_router)
 
-# Статические файлы
 app.mount("/static", StaticFiles(directory="app/presentation/static"), name="static")
 
 @app.get("/")
