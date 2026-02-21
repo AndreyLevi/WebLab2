@@ -31,19 +31,16 @@ class LinkService:
         return self.repository.create(link_data, user_id)
     
     def update(self, link_id: int, data: LinkUpdate, user_id: int):
-        link = self.repository.get_by_id(link_id, user_id)
+        update_data = data.dict(exclude_unset=True)
+        link = self.repository.update(link_id, user_id, update_data)
         if not link:
             raise HTTPException(status_code=404, detail="Ссылка не найдена")
-        
-        update_data = data.dict(exclude_unset=True)
-        return self.repository.update(link, update_data)
+        return link
     
     def delete(self, link_id: int, user_id: int) -> dict:
-        link = self.repository.get_by_id(link_id, user_id)
-        if not link:
+        success = self.repository.delete(link_id, user_id)
+        if not success:
             raise HTTPException(status_code=404, detail="Ссылка не найдена")
-        
-        self.repository.delete(link)
         return {"message": "Ссылка успешно удалена"}
 
 class AuthService:

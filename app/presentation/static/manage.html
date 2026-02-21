@@ -12,30 +12,17 @@
         <a href="contacts.html">Контакты</a>
         <a href="#" onclick="logout()">Выход</a>
     </nav>
-    
-    <h1>Добавить новую ссылку</h1>
-    
-    <form id="add-form">
-        <label>URL адрес:</label>
+    <h1>Добавить ссылку</h1>
+    <form id="add-link-form">
+        <label>URL:</label>
         <input type="url" id="url" placeholder="https://example.com" required>
-        
         <label>Заголовок:</label>
-        <input type="text" id="title" placeholder="Например: Google" required>
-        
+        <input type="text" id="title" placeholder="Название сайта" required>
         <label>Описание:</label>
-        <input type="text" id="desc" placeholder="Краткое описание">
-        
-        <button type="submit">Добавить ссылку</button>
+        <textarea id="description" placeholder="Краткое описание"></textarea>
+        <button type="submit">Добавить</button>
     </form>
-    
     <div id="message"></div>
-    
-    <hr>
-    
-    <h1>Удалить ссылку</h1>
-    <input type="text" id="delete-id" placeholder="Введите ID ссылки">
-    <button onclick="deleteLink()">Удалить</button>
-    
     <script src="script.js"></script>
 </body>
 </html>

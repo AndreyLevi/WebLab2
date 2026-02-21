@@ -1,6 +1,7 @@
 const API_URL = "/api";
 let authToken = localStorage.getItem('token');
 
+// Форма входа
 document.getElementById('login-form')?.addEventListener('submit', async function(e) {
     e.preventDefault();
     const username = document.getElementById('username').value;
@@ -25,6 +26,7 @@ document.getElementById('login-form')?.addEventListener('submit', async function
     }
 });
 
+// Форма регистрации
 document.getElementById('register-form')?.addEventListener('submit', async function(e) {
     e.preventDefault();
     const username = document.getElementById('reg-username').value;
@@ -48,6 +50,38 @@ document.getElementById('register-form')?.addEventListener('submit', async funct
     }
 });
 
+// Форма добавления ссылки
+document.getElementById('add-link-form')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    checkAuth();
+    
+    const url = document.getElementById('url').value;
+    const title = document.getElementById('title').value;
+    const description = document.getElementById('description').value;
+    
+    try {
+        const response = await fetch(API_URL + "/links/", {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${authToken}`
+            },
+            body: JSON.stringify({ url, title, description })
+        });
+        
+        if (response.ok) {
+            showMessage('Ссылка добавлена', 'success');
+            document.getElementById('add-link-form').reset();
+        } else {
+            const error = await response.json();
+            showMessage('Ошибка: ' + error.detail, 'error');
+        }
+    } catch (error) {
+        showMessage('Ошибка соединения', 'error');
+    }
+});
+
+// Загрузка ссылок
 async function loadLinks() {
     const container = document.getElementById('links-container');
     if (!container) return;
@@ -78,6 +112,7 @@ async function loadLinks() {
     }
 }
 
+// Удаление ссылки
 async function deleteLink(id) {
     if (!confirm('Удалить эту ссылку?')) return;
     checkAuth();
@@ -97,26 +132,32 @@ async function deleteLink(id) {
     }
 }
 
+// Проверка авторизации
 function checkAuth() {
     if (!authToken) {
         window.location.href = 'login.html';
     }
 }
 
+// Показать сообщение
 function showMessage(text, type) {
     const msgDiv = document.getElementById('message');
     if (msgDiv) {
         msgDiv.className = type;
         msgDiv.innerText = text;
+    } else {
+        alert(text);
     }
 }
 
+// Выход
 function logout() {
     localStorage.removeItem('token');
     authToken = null;
     window.location.href = 'login.html';
 }
 
+// Проверка авторизации при загрузке защищённых страниц
 if (window.location.pathname.includes('index.html') || window.location.pathname.includes('manage.html')) {
     checkAuth();
 }
